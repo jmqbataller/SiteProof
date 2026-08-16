@@ -1,0 +1,12 @@
+{
+  "name": "siteproof",
+  "version": "0.1.0",
+  "description": "Evidence-based full website auditing with SiteProof MCP tools and audit methodology.",
+  "skills": ["skills/siteproof"],
+  "mcp_servers": {
+    "siteproof": {
+      "url": "${SITEPROOF_MCP_URL}",
+      "headers": {"Authorization": "Bearer ${SITEPROOF_API_KEY}"}
+    }
+  }
+}
