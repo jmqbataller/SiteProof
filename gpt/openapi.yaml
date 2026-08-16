@@ -1,0 +1,43 @@
+openapi: 3.1.0
+info:
+  title: SiteProof Audit API
+  version: 0.1.0
+servers:
+  - url: https://YOUR-SITEPROOF-DOMAIN.example
+paths:
+  /api/audit/site:
+    post:
+      operationId: auditSite
+      summary: Crawl and audit a public website
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url: {type: string, format: uri}
+                maxPages: {type: integer, minimum: 1, maximum: 150, default: 50}
+      responses:
+        '200': {description: Audit result}
+  /api/audit/page:
+    post:
+      operationId: auditPage
+      summary: Audit one public webpage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url: {type: string, format: uri}
+      responses:
+        '200': {description: Page audit result}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer}
+security:
+  - bearerAuth: []
