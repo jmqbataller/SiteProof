@@ -1,0 +1,17 @@
+{
+  "name": "siteproof",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {"dev":"tsx src/server.ts","start":"tsx src/server.ts","typecheck":"tsc --noEmit"},
+  "engines": {"node": ">=20"},
+  "dependencies": {
+    "@modelcontextprotocol/server": "latest",
+    "@modelcontextprotocol/node": "latest",
+    "cheerio": "latest",
+    "express": "latest",
+    "p-limit": "latest",
+    "zod": "^4.2.0"
+  },
+  "devDependencies": {"tsx":"latest","typescript":"latest","@types/express":"latest","@types/node":"latest"}
+}
