@@ -1,0 +1,12 @@
+{
+  "name": "siteproof-marketplace",
+  "interface": {"displayName": "SiteProof"},
+  "plugins": [
+    {
+      "name": "siteproof",
+      "source": {"source": "local", "path": "./"},
+      "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+      "category": "Productivity"
+    }
+  ]
+}

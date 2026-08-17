@@ -1,17 +1,46 @@
 {
   "name": "siteproof",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.2.0",
+  "description": "Evidence-based full-force website auditing for ChatGPT, Workspace Agents, GPT Actions and MCP clients.",
   "type": "module",
-  "scripts": {"dev":"tsx src/server.ts","start":"tsx src/server.ts","typecheck":"tsc --noEmit"},
-  "engines": {"node": ">=20"},
-  "dependencies": {
-    "@modelcontextprotocol/server": "latest",
-    "@modelcontextprotocol/node": "latest",
-    "cheerio": "latest",
-    "express": "latest",
-    "p-limit": "latest",
-    "zod": "^4.2.0"
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "browsers:install": "playwright install chromium",
+    "browsers:install:deps": "playwright install --with-deps chromium",
+    "mcp:stdio": "tsx src/stdio.ts",
+    "configure:chatgpt": "node scripts/configure-chatgpt-app.mjs",
+    "check": "npm run typecheck && npm test",
+    "test:browser": "tsx --test tests/browser/*.ts"
   },
-  "devDependencies": {"tsx":"latest","typescript":"latest","@types/express":"latest","@types/node":"latest"}
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/node": "latest",
+    "@modelcontextprotocol/server": "latest",
+    "@supabase/supabase-js": "latest",
+    "axe-core": "latest",
+    "cheerio": "latest",
+    "chrome-launcher": "latest",
+    "docx": "latest",
+    "exceljs": "latest",
+    "express": "latest",
+    "fast-xml-parser": "latest",
+    "lighthouse": "latest",
+    "p-limit": "latest",
+    "pdfkit": "latest",
+    "playwright": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/express": "latest",
+    "@types/node": "latest",
+    "@types/pdfkit": "latest",
+    "tsx": "latest",
+    "typescript": "latest"
+  }
 }

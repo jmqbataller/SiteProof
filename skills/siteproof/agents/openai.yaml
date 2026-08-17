@@ -1,0 +1,10 @@
+# Optional remote MCP dependency template.
+# Replace the URL after deploying SiteProof, then uncomment before distributing
+# a skill package that should bind directly to your hosted server.
+# dependencies:
+#   tools:
+#     - type: "mcp"
+#       value: "siteproof"
+#       description: "Run evidence-based website audits and retrieve/export audit results."
+#       transport: "streamable_http"
+#       url: "https://YOUR-SITEPROOF-DOMAIN.example/mcp"

@@ -1,0 +1,10 @@
+.git
+.github
+node_modules
+dist
+.env
+data
+playwright-report
+test-results
+*.zip
+.DS_Store
