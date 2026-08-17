@@ -1,7 +1,7 @@
 {
   "name": "siteproof",
-  "version": "0.3.0",
-  "description": "Evidence-based website auditing, remediation planning, and multi-format audit/fix artifact generation.",
+  "version": "0.4.0",
+  "description": "Evidence-based website auditing, remediation planning, safe GitHub Fix Mode, verification, and multi-format audit/fix artifact generation.",
   "skills": ["skills/siteproof"],
   "mcp_servers": {
     "siteproof": {
