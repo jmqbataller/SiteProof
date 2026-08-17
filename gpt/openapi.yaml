@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: SiteProof Audit, Remediation & Artifact API
-  version: 0.3.0
+  title: SiteProof Audit, Remediation, Fix & Artifact API
+  version: 0.4.0
 servers:
   - url: https://YOUR-SITEPROOF-DOMAIN.example
 paths:
@@ -47,40 +47,25 @@ paths:
             schema:
               type: object
               properties:
-                url:
-                  type: string
-                  format: uri
-                  description: Website to audit before planning when auditData is not supplied.
+                url: {type: string, format: uri}
                 auditData:
                   type: object
                   additionalProperties: true
-                  description: Existing SiteProof canonical audit object. Prefer this when the audit is already prepared.
                 maxPages: {type: integer, minimum: 1, maximum: 150, default: 50}
                 includeInformational: {type: boolean, default: true}
                 maxItems: {type: integer, minimum: 1, maximum: 500, default: 500}
                 formats:
                   type: array
-                  description: Optional Fix Pack artifact formats. Leave empty for plan JSON only.
                   items: {type: string}
                   default: []
-                template:
-                  type: string
-                  enum: [detailed-audit, executive-summary, client-report, raw]
-                  default: client-report
+                template: {type: string, enum: [detailed-audit, executive-summary, client-report, raw], default: client-report}
                 pageSize: {type: string, enum: [A4, LETTER], default: A4}
                 orientation: {type: string, enum: [portrait, landscape], default: portrait}
                 filenamePrefix: {type: string}
                 bundleFormats:
                   type: array
                   items: {type: string}
-                branding:
-                  type: object
-                  properties:
-                    companyName: {type: string}
-                    clientName: {type: string}
-                    preparedBy: {type: string}
-                    reportTitle: {type: string}
-                    confidentialityLabel: {type: string}
+                branding: {$ref: '#/components/schemas/Branding'}
               anyOf:
                 - required: [url]
                 - required: [auditData]
@@ -106,14 +91,7 @@ paths:
                   type: array
                   items: {type: string}
                   default: [pdf, xlsx, docx]
-                branding:
-                  type: object
-                  properties:
-                    companyName: {type: string}
-                    clientName: {type: string}
-                    preparedBy: {type: string}
-                    reportTitle: {type: string}
-                    confidentialityLabel: {type: string}
+                branding: {$ref: '#/components/schemas/Branding'}
       responses:
         '200': {description: Canonical audit, remediation plan, and generated Fix Pack artifacts}
   /api/export/formats:
@@ -133,51 +111,191 @@ paths:
             schema:
               type: object
               properties:
-                url:
-                  type: string
-                  format: uri
-                  description: Website to audit before export when auditData is not supplied.
+                url: {type: string, format: uri}
                 maxPages: {type: integer, minimum: 1, maximum: 150, default: 50}
                 auditData:
                   type: object
                   additionalProperties: true
-                  description: Previously prepared SiteProof audit object. Use this to export without rerunning the audit.
                 formats:
                   type: array
                   minItems: 1
                   items: {type: string}
                   default: [pdf, xlsx, docx]
-                template:
-                  type: string
-                  enum: [detailed-audit, executive-summary, client-report, raw]
-                  default: detailed-audit
-                pageSize:
-                  type: string
-                  enum: [A4, LETTER]
-                  default: A4
-                orientation:
-                  type: string
-                  enum: [portrait, landscape]
-                  default: portrait
+                template: {type: string, enum: [detailed-audit, executive-summary, client-report, raw], default: detailed-audit}
+                pageSize: {type: string, enum: [A4, LETTER], default: A4}
+                orientation: {type: string, enum: [portrait, landscape], default: portrait}
                 filenamePrefix: {type: string}
                 bundleFormats:
                   type: array
                   items: {type: string}
-                branding:
-                  type: object
-                  properties:
-                    companyName: {type: string}
-                    clientName: {type: string}
-                    preparedBy: {type: string}
-                    reportTitle: {type: string}
-                    confidentialityLabel: {type: string}
+                branding: {$ref: '#/components/schemas/Branding'}
               anyOf:
                 - required: [url]
                 - required: [auditData]
       responses:
-        '200':
-          description: Generated artifacts with temporary download URLs
+        '200': {description: Generated artifacts with temporary download URLs}
+
+  /api/fix/capabilities:
+    get:
+      operationId: getFixCapabilities
+      summary: Check whether GitHub Fix Mode is configured and which safety controls are active
+      responses:
+        '200': {description: Fix Mode capabilities and safeguards}
+
+  /api/fix/github/read:
+    post:
+      operationId: readRepositoryFiles
+      summary: Read specific source files from an allowed GitHub repository before preparing a fix
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [repository, paths]
+              properties:
+                repository:
+                  type: string
+                  description: GitHub repository in owner/name format.
+                ref:
+                  type: string
+                  description: Branch or ref to read. Defaults to the repository default branch.
+                paths:
+                  type: array
+                  minItems: 1
+                  maxItems: 30
+                  items: {type: string}
+      responses:
+        '200': {description: Requested source files with current content and SHA}
+
+  /api/fix/github/preview:
+    post:
+      operationId: previewGithubFix
+      summary: Preview exact proposed GitHub file changes without writing anything
+      description: Returns compact diffs plus a short-lived preview ID and approval token. The user must explicitly approve the preview before applyGithubFix is called.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [repository, changes]
+              properties:
+                repository: {type: string}
+                baseBranch: {type: string}
+                changes:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  items: {$ref: '#/components/schemas/SourceChange'}
+      responses:
+        '200': {description: No-write fix preview, diffs, proposed branch, preview ID, and approval token}
+
+  /api/fix/github/apply:
+    post:
+      operationId: applyGithubFix
+      summary: Apply a previously previewed and explicitly approved change set to a new SiteProof fix branch
+      description: Never call this before the user approves the exact preview. SiteProof rechecks source hashes, makes one atomic commit on a siteproof/fix-* branch, and normally opens a pull request. It never writes directly to the base branch through Fix Mode.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [previewId, approvalToken, approval]
+              properties:
+                previewId: {type: string, format: uuid}
+                approvalToken: {type: string}
+                approval:
+                  type: string
+                  enum: [APPLY]
+                commitMessage: {type: string}
+                createPullRequest: {type: boolean, default: true}
+                pullRequestTitle: {type: string}
+                pullRequestBody: {type: string}
+      responses:
+        '200': {description: Created fix branch, atomic commit, and optional pull request}
+
+  /api/fix/github/discard:
+    post:
+      operationId: discardGithubFixBranch
+      summary: Delete an unneeded unmerged SiteProof fix branch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [repository, branch, confirmation]
+              properties:
+                repository: {type: string}
+                branch: {type: string}
+                confirmation:
+                  type: string
+                  enum: [DISCARD]
+      responses:
+        '200': {description: Fix branch discarded}
+
+  /api/fix/verify:
+    post:
+      operationId: verifyFixes
+      summary: Re-audit after implementation and create a before/after verification result and optional artifacts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [beforeAudit]
+              properties:
+                beforeAudit:
+                  type: object
+                  additionalProperties: true
+                  description: Original SiteProof audit from before the fix.
+                afterAudit:
+                  type: object
+                  additionalProperties: true
+                  description: Optional already-prepared post-fix audit. If omitted, SiteProof re-audits url/beforeAudit.site.
+                url: {type: string, format: uri}
+                maxPages: {type: integer, minimum: 1, maximum: 150, default: 50}
+                formats:
+                  type: array
+                  items: {type: string}
+                  default: []
+                template: {type: string, enum: [detailed-audit, executive-summary, client-report, raw], default: client-report}
+                pageSize: {type: string, enum: [A4, LETTER], default: A4}
+                orientation: {type: string, enum: [portrait, landscape], default: portrait}
+                filenamePrefix: {type: string}
+                bundleFormats:
+                  type: array
+                  items: {type: string}
+                branding: {$ref: '#/components/schemas/Branding'}
+      responses:
+        '200': {description: Resolved/still-present comparison plus optional before/after files}
+
 components:
+  schemas:
+    Branding:
+      type: object
+      properties:
+        companyName: {type: string}
+        clientName: {type: string}
+        preparedBy: {type: string}
+        reportTitle: {type: string}
+        confidentialityLabel: {type: string}
+    SourceChange:
+      type: object
+      required: [path]
+      properties:
+        path: {type: string}
+        content:
+          type: string
+          description: Complete replacement UTF-8 file content. Omit only when delete is true.
+        delete: {type: boolean, default: false}
+        findingIds:
+          type: array
+          items: {type: string}
+        reason: {type: string}
   securitySchemes:
     bearerAuth: {type: http, scheme: bearer}
 security:
