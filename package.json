@@ -1,17 +1,32 @@
 {
   "name": "siteproof",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "scripts": {"dev":"tsx src/server.ts","start":"tsx src/server.ts","typecheck":"tsc --noEmit"},
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
   "engines": {"node": ">=20"},
   "dependencies": {
     "@modelcontextprotocol/server": "latest",
     "@modelcontextprotocol/node": "latest",
     "cheerio": "latest",
+    "docx": "latest",
+    "exceljs": "latest",
     "express": "latest",
+    "jszip": "latest",
+    "pdfkit": "latest",
     "p-limit": "latest",
+    "pptxgenjs": "latest",
     "zod": "^4.2.0"
   },
-  "devDependencies": {"tsx":"latest","typescript":"latest","@types/express":"latest","@types/node":"latest"}
+  "devDependencies": {
+    "@types/express": "latest",
+    "@types/node": "latest",
+    "@types/pdfkit": "latest",
+    "tsx": "latest",
+    "typescript": "latest"
+  }
 }
