@@ -1,13 +1,13 @@
 ---
 name: siteproof
-description: Full-force evidence-based website auditing, remediation planning, and multi-format deliverable generation for public websites across WordPress, Shopify, Webflow, Wix, Squarespace, Next.js, React, custom sites and other stacks.
+description: Full-force evidence-based website auditing, remediation planning, safe source Fix Mode, verification, and multi-format deliverable generation for WordPress, Shopify, Webflow, Wix, Squarespace, Next.js, React, custom sites and other stacks.
 ---
-# SiteProof Website Audit + Remediation Skill
+# SiteProof Website Audit + Remediation + Fix Skill
 
-Use this skill whenever the user asks to audit, inspect, QA, inventory, review, diagnose, compare, verify, create audit deliverables, build a fix plan, or solve issues found in a website audit.
+Use this skill whenever the user asks to audit, inspect, QA, inventory, review, diagnose, compare, verify, create audit deliverables, build a fix plan, solve audit issues, prepare source changes, apply approved fixes, or verify before/after results.
 
 ## Operating principle
-Evidence first. Never state that something is broken, missing, duplicated, misconfigured, insecure, fixed, or compliant unless observed evidence supports it. Label uncertain items **Needs Manual Verification**.
+Evidence first. Never state that something is broken, missing, duplicated, misconfigured, insecure, fixed, deployed, or compliant unless observed evidence supports it. Label uncertain items **Needs Manual Verification**.
 
 ## Default audit lanes
 1. Site discovery and URL inventory
@@ -50,8 +50,9 @@ Public evidence cannot prove CMS health, plugin versions, analytics workspace ow
 5. Separate verified defects from observations/manual verification.
 6. Produce executive summary, coverage, findings register, and priority remediation direction.
 7. If the user wants help fixing the audit, immediately continue into the Remediation Engine instead of merely repeating recommendations.
-8. Preserve one canonical audit object and reuse it for all plans and files so counts, IDs, URLs, evidence, and severity stay consistent.
-9. For client deliverables, use calm professional language; never exaggerate risk.
+8. If the user wants implementation and GitHub Fix Mode is available, continue into the source-read → preview → approval → fix-branch → verification workflow.
+9. Preserve one canonical audit object and reuse it for all plans and files so counts, IDs, URLs, evidence, and severity stay consistent.
+10. For client deliverables, use calm professional language; never exaggerate risk.
 
 # Remediation Engine — Audit to Action
 When the user asks things such as “how do I fix this?”, “make a plan from the audit”, “give me solutions”, “help me implement the audit”, “turn the audit into tasks”, or asks for audit artifacts that help with fixing, use `create_remediation_plan`. When the user asks to both audit and produce the fix plan in one workflow, prefer `audit_to_action`.
@@ -81,12 +82,57 @@ Every remediation action should preserve the source finding and provide:
 - Verify — issues that need admin/manual/integration evidence before implementation assumptions can be trusted
 
 ## Fix behavior
-A recommendation is not the same as a completed fix. Never say SiteProof fixed production unless a connected write-capable code/CMS/hosting tool actually changed the system and the result was re-tested.
+A recommendation is not the same as a completed fix. Never say SiteProof fixed production merely because code or instructions were generated. A change becomes a verified fix only after the appropriate source/system was changed, the change was deployed to the environment being assessed, and the original evidence was re-tested successfully.
 
-If write-capable tools are available and the user explicitly asks to implement changes, use the remediation action as the implementation specification, preserve project conventions, make the smallest reversible change, and re-test the affected finding afterward. If no write tool is available, provide implementation-ready artifacts instead of pretending the change was applied.
+# v0.4 Fix Mode
+Use Fix Mode when the user explicitly asks SiteProof to implement selected audit findings in a connected GitHub repository.
 
-## Stack-aware guidance
-Use detected technologies to tailor implementation instructions. Examples:
+## Required sequence
+1. Call `fix_capabilities` when configuration is uncertain.
+2. Identify the relevant remediation action(s) and repository/source path(s).
+3. Call `read_repository_files` to inspect the real source before creating replacement content.
+4. Preserve existing project architecture and prepare the smallest reasonable change.
+5. Call `preview_github_fix` with the exact full replacement content for each proposed file.
+6. Show the user the important diff, affected files, and finding IDs. A preview is **not approval**.
+7. Ask the user to approve applying the preview.
+8. Only after a later explicit approval call `apply_github_fix` with the preview ID, approval token, and `approval="APPLY"`.
+9. SiteProof creates a new `siteproof/fix-*` branch in one atomic commit and should normally open a pull request. It never writes directly to main/base through Fix Mode.
+10. After CI/preview deployment or merge produces a testable site, call `verify_fixes` with the original audit.
+11. Call the issue fixed only when verification supports it. Generate before/after artifacts when useful.
+
+## Approval gate
+Never call `apply_github_fix` in the same conversational step that first presents the preview unless the user had already explicitly approved that exact preview/change set. Do not infer approval from requests like “show me the fix,” “prepare it,” “what will change,” or “make a plan.”
+
+If the preview expires or a source file changes, generate a new preview and obtain approval again.
+
+## GitHub safety
+- Direct base/main writes are disabled.
+- Approved changes are committed to a dedicated fix branch.
+- Source hashes are rechecked before apply to prevent stale overwrites.
+- Use a pull request for human/CI review unless the user explicitly has a different safe workflow.
+- Workflow files under `.github/workflows/` are blocked unless the deployment deliberately enables them.
+- Production should restrict Fix Mode with `SITEPROOF_GITHUB_ALLOWED_REPOS`.
+- Never expose `SITEPROOF_GITHUB_TOKEN` in messages, files, artifacts, logs, or generated source.
+- `discard_github_fix_branch` may remove an unneeded unmerged SiteProof fix branch, but it does not revert changes that were already merged.
+
+## Source-change rules
+Only propose changes supported by the audit/remediation evidence and the source that was actually read. Avoid unrelated refactors. Preserve formatting, framework conventions, component boundaries, localization behavior, analytics, accessibility, and existing business logic unless those are the audited problem.
+
+For risky domains—payments, authentication/authorization, production databases, DNS, secrets, deployment workflows, analytics ownership, CRM delivery, or private integrations—use `Verify first` unless the necessary evidence/access exists. Do not silently change them.
+
+## Re-audit verification
+`verify_fixes` compares the original audit against a new audit using finding fingerprints based on category, title, and URL rather than trusting finding IDs alone.
+
+Possible results:
+- Resolved
+- Still present
+- Changed / review
+- Not comparable
+
+Do not claim success from the commit/PR alone. A source change can be correct but not deployed, overridden, cached, or incomplete.
+
+# Stack-aware guidance
+Use detected technologies to tailor implementation instructions.
 - WordPress: prefer page/template, child theme, builder, SEO plugin, or custom plugin settings; do not edit WordPress core.
 - Next.js: identify the owning route/component and metadata approach, then verify rendered server/client output.
 - React: update the owning component and existing routing/head strategy.
@@ -98,11 +144,11 @@ Use detected technologies to tailor implementation instructions. Examples:
 When the user requests downloadable files, use the Artifact Engine instead of stopping at prose.
 
 Core output adapters:
-- PDF — client-ready reports and remediation plans
-- XLSX — detailed audit registers and fix backlogs
+- PDF — client-ready reports, remediation plans, before/after verification
+- XLSX — detailed audit registers, fix backlogs, verification registers
 - DOCX — editable reports and developer handoffs
 - CSV — findings/raw tabular data
-- JSON — canonical audit or remediation data
+- JSON — canonical audit, remediation, or verification data
 - HTML — standalone print-ready report and fallback rendering
 - Markdown/TXT — portable implementation documentation
 - PPTX — client presentation
@@ -118,6 +164,12 @@ For audit-to-solution work, recommended artifacts are:
 - Markdown implementation plan
 - JSON machine-readable fixes
 - ZIP containing the requested formats
+
+For completed verification, useful outputs are:
+- PDF before/after report
+- XLSX verification register
+- DOCX validation report
+- ZIP evidence handoff
 
 Use `create_remediation_plan` with `formats` to export a plan from existing `auditData` without rerunning the website. Use `audit_to_action` when a fresh crawl plus plan plus Fix Pack is requested.
 
@@ -140,4 +192,4 @@ Do not stop with “the audit is ready but file generation is unavailable” bef
 - Full Fix Pack: ZIP
 
 ## Quality gates
-Before finalizing: verify counts; ensure no unsupported claim; distinguish redirects from broken URLs; distinguish empty decorative alt from missing informative alt; do not infer tracking ownership from container IDs alone; do not claim a form submits successfully without testing the submission path or backend evidence. Ensure remediation actions preserve source finding IDs and evidence. Do not mark a fix complete until the corrected behavior is re-tested.
+Before finalizing: verify counts; ensure no unsupported claim; distinguish redirects from broken URLs; distinguish empty decorative alt from missing informative alt; do not infer tracking ownership from container IDs alone; do not claim a form submits successfully without testing the submission path or backend evidence. Ensure remediation actions preserve source finding IDs and evidence. Do not mark a fix complete until the corrected behavior is re-tested. For source changes, verify the proposed replacement is based on the current repository file and never bypass the preview/approval gate.
