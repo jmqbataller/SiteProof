@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: SiteProof Audit API
-  version: 0.1.0
+  title: SiteProof Audit & Artifact API
+  version: 0.2.0
 servers:
   - url: https://YOUR-SITEPROOF-DOMAIN.example
 paths:
@@ -36,6 +36,67 @@ paths:
                 url: {type: string, format: uri}
       responses:
         '200': {description: Page audit result}
+  /api/export/formats:
+    get:
+      operationId: listExportFormats
+      summary: List installed SiteProof artifact formats
+      responses:
+        '200': {description: Supported export formats}
+  /api/export:
+    post:
+      operationId: exportAudit
+      summary: Generate downloadable audit files from a website or canonical audit data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: Website to audit before export when auditData is not supplied.
+                maxPages: {type: integer, minimum: 1, maximum: 150, default: 50}
+                auditData:
+                  type: object
+                  additionalProperties: true
+                  description: Previously prepared SiteProof audit object. Use this to export without rerunning the audit.
+                formats:
+                  type: array
+                  minItems: 1
+                  items: {type: string}
+                  default: [pdf, xlsx, docx]
+                template:
+                  type: string
+                  enum: [detailed-audit, executive-summary, client-report, raw]
+                  default: detailed-audit
+                pageSize:
+                  type: string
+                  enum: [A4, LETTER]
+                  default: A4
+                orientation:
+                  type: string
+                  enum: [portrait, landscape]
+                  default: portrait
+                filenamePrefix: {type: string}
+                bundleFormats:
+                  type: array
+                  items: {type: string}
+                branding:
+                  type: object
+                  properties:
+                    companyName: {type: string}
+                    clientName: {type: string}
+                    preparedBy: {type: string}
+                    reportTitle: {type: string}
+                    confidentialityLabel: {type: string}
+              anyOf:
+                - required: [url]
+                - required: [auditData]
+      responses:
+        '200':
+          description: Generated artifacts with temporary download URLs
 components:
   securitySchemes:
     bearerAuth: {type: http, scheme: bearer}
