@@ -1,7 +1,7 @@
 {
   "name": "siteproof",
-  "version": "0.1.0",
-  "description": "Evidence-based full website auditing with SiteProof MCP tools and audit methodology.",
+  "version": "0.2.0",
+  "description": "Evidence-based website auditing with multi-format client artifact generation.",
   "skills": ["skills/siteproof"],
   "mcp_servers": {
     "siteproof": {
