@@ -1,0 +1,12 @@
+services:
+  siteproof:
+    build: .
+    ports:
+      - "8787:8787"
+    env_file:
+      - .env
+    volumes:
+      - siteproof-data:/app/data
+    restart: unless-stopped
+volumes:
+  siteproof-data:

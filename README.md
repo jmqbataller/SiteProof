@@ -1,46 +1,110 @@
-# SiteProof
-Evidence-based full-force website auditing for ChatGPT, ChatGPT Work, GPTs and MCP clients.
+# SiteProof v0.2
 
-## What is included
-- `skills/siteproof/SKILL.md` — reusable ChatGPT Work / plugin audit skill
-- `.codex-plugin/plugin.json` — plugin package manifest
-- `/mcp` — MCP endpoint exposing `audit_site` and `audit_page`
-- `gpt/INSTRUCTIONS.md` — GPT system instructions
-- `gpt/openapi.yaml` — GPT Action schema
-- `knowledge/AUDIT_KNOWLEDGE.md` — audit methodology and guardrails
-- REST API for the same audit engine
+**Evidence-based full-force website auditing for ChatGPT, ChatGPT Work, GPT Actions and MCP clients.**
 
-## Run locally
+SiteProof audits public websites across WordPress, Shopify, Webflow, Wix, Squarespace, React/Next.js and custom stacks. It separates verified observations from facts that require admin/manual evidence.
+
+## v0.2 highlights
+- **Fast mode:** HTTP + source HTML for quick audits.
+- **Full Force mode:** Playwright Chromium rendering, axe-core, screenshots, Lighthouse sampling and optional CrUX.
+- robots.txt + recursive XML sitemap discovery.
+- redirect-aware unique link checking and broken-link inventory.
+- SEO metadata, canonicals, indexability, headings, images, JSON-LD and social metadata.
+- forms, fields, CTA classification, phone/email/booking, popups and consent UI.
+- tracking-ID inventory: GTM, GA4, UA, Google Ads, Meta Pixel, Clarity, Hotjar, TikTok, HubSpot, CallRail.
+- security-header and mixed-content observations.
+- duplicate metadata detection, technology/CMS fingerprints and optional WordPress REST admin observations.
+- audit scoring, local/Supabase history, before/after comparisons.
+- JSON/CSV/XLSX/DOCX/PDF exports.
+- MCP tools, ChatGPT plugin manifest, ChatGPT Work skill, and GPT Action/OpenAPI package.
+
+## Project structure
+```text
+.codex-plugin/plugin.json      ChatGPT/Codex plugin manifest
+.mcp.json                      bundled stdio MCP config for a development checkout
+.app.json.example              remote ChatGPT MCP mapping template
+skills/siteproof/              full audit skill + reference playbooks
+knowledge/                     GPT audit knowledge
+gpt/                           GPT instructions + OpenAPI Action schema
+src/                           audit engine, REST API and MCP server
+supabase/schema.sql            optional persistence schema
+docs/                          install and coverage guides
+tests/                         smoke/unit tests
+```
+
+## Requirements
+- Node.js 22+
+- For Full Force: Chromium installed through Playwright
+- HTTPS for a remote ChatGPT MCP/Action deployment
+- Optional: Supabase project, Google API key for CrUX
+
+## Local install
 ```bash
 cp .env.example .env
 npm install
+npm run browsers:install
+npm run check
 npm run dev
 ```
-Health check: `GET http://localhost:8787/health`
 
-Full site audit:
+Health check:
+```bash
+curl http://localhost:8787/health
+```
+
+Fast audit:
 ```bash
 curl -X POST http://localhost:8787/api/audit/site \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer change-me' \
-  -d '{"url":"https://example.com","maxPages":25}'
+  -d '{"url":"https://example.com","mode":"fast","maxPages":25}'
 ```
 
-## ChatGPT / Plugin
-Deploy this service over HTTPS. Set `SITEPROOF_MCP_URL=https://your-domain.example/mcp` and `SITEPROOF_API_KEY`. Install/package the repository as a plugin where supported. The bundled skill supplies methodology; MCP supplies live audit tools.
+Full-force audit:
+```bash
+curl -X POST http://localhost:8787/api/audit/site/start \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer change-me' \
+  -d '{"url":"https://example.com","mode":"full","maxPages":50,"screenshotMode":"findings"}'
+```
 
-## GPT setup
-1. Create/edit a GPT.
-2. Name: **SiteProof — Website Audit Agent**.
-3. Paste `gpt/INSTRUCTIONS.md` into Instructions.
-4. Upload `knowledge/AUDIT_KNOWLEDGE.md` and optionally `skills/siteproof/SKILL.md` as Knowledge.
-5. Add an Action and import `gpt/openapi.yaml`.
-6. Replace the placeholder server URL with your deployed HTTPS domain.
-7. Configure Bearer authentication with the same API key.
-8. Test `Audit https://example.com up to 20 pages` in Preview.
+Poll the returned `/api/jobs/<jobId>` endpoint until complete.
 
-## Current scope
-This initial release performs safe public-web auditing. It intentionally does **not** claim admin-only facts such as WordPress Site Health, plugin versions, analytics ownership, CRM delivery or server configuration without credentials/tools.
+## MCP tools
+- `discover_site`
+- `audit_page`
+- `audit_site`
+- `get_audit`
+- `compare_audits`
+- `export_audit`
 
-## Roadmap
-Playwright screenshots/interactive-flow checks, Lighthouse/CrUX, robots/sitemap parser, structured-data validation, link status fan-out, accessibility engine, Supabase persistence, XLSX/DOCX/PDF exports, before/after comparison, authenticated CMS adapters.
+HTTP MCP endpoint: `POST/GET /mcp` through Streamable HTTP transport. Local development can run `npm run mcp:stdio`.
+
+## ChatGPT / ChatGPT Work
+See **[docs/INSTALL-CHATGPT.md](docs/INSTALL-CHATGPT.md)**. The plugin manifest and skill are included. For a remote ChatGPT MCP connection, deploy the server first and register `/mcp`; ChatGPT then generates the technical app ID used to create `.app.json`.
+
+## GPT
+See **[docs/INSTALL-GPT.md](docs/INSTALL-GPT.md)**. The repo contains ready-to-import GPT instructions, knowledge and an OpenAPI 3.1 Action schema.
+
+## Supabase
+Run `supabase/schema.sql`, then set:
+```env
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+```
+Local JSON persistence remains enabled even without Supabase.
+
+## Docker
+```bash
+cp .env.example .env
+docker compose up --build
+```
+The Docker image installs Chromium and its required Linux dependencies.
+
+## Evidence policy
+SiteProof never treats public evidence as proof of private configuration. Form delivery, CRM routing, analytics ownership/triggers, WordPress Site Health, private server settings and full WCAG conformance remain manual/admin checks unless corresponding authorized evidence is available.
+
+See **[docs/AUDIT-COVERAGE.md](docs/AUDIT-COVERAGE.md)** for the coverage boundary.
+
+## License
+MIT.

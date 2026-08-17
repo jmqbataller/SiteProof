@@ -1,14 +1,17 @@
 openapi: 3.1.0
 info:
   title: SiteProof Audit API
-  version: 0.1.0
+  version: 0.2.0
+  description: Evidence-based public website audit API for SiteProof GPT Actions.
 servers:
   - url: https://YOUR-SITEPROOF-DOMAIN.example
+security:
+  - bearerAuth: []
 paths:
-  /api/audit/site:
+  /api/discover:
     post:
-      operationId: auditSite
-      summary: Crawl and audit a public website
+      operationId: discoverSite
+      summary: Discover robots, sitemaps and public URLs
       requestBody:
         required: true
         content:
@@ -18,13 +21,13 @@ paths:
               required: [url]
               properties:
                 url: {type: string, format: uri}
-                maxPages: {type: integer, minimum: 1, maximum: 150, default: 50}
+                maxUrls: {type: integer, minimum: 1, maximum: 2000, default: 500}
       responses:
-        '200': {description: Audit result}
+        '200': {description: Discovery result}
   /api/audit/page:
     post:
       operationId: auditPage
-      summary: Audit one public webpage
+      summary: Audit one webpage
       requestBody:
         required: true
         content:
@@ -34,10 +37,117 @@ paths:
               required: [url]
               properties:
                 url: {type: string, format: uri}
+                mode: {type: string, enum: [fast, full], default: full}
       responses:
-        '200': {description: Page audit result}
+        '200': {description: Detailed page audit}
+  /api/audit/site/start:
+    post:
+      operationId: startSiteAudit
+      summary: Start an asynchronous full-site audit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiteAuditRequest'
+      responses:
+        '202': {description: Audit job created}
+  /api/jobs/{id}:
+    get:
+      operationId: getAuditJob
+      summary: Poll a SiteProof audit job
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      responses:
+        '200': {description: Job state and compact audit result when complete}
+  /api/audit/site:
+    post:
+      operationId: auditSiteSync
+      summary: Run a synchronous website audit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/SiteAuditRequest'
+                - type: object
+                  properties:
+                    responseMode: {type: string, enum: [compact, full], default: compact}
+      responses:
+        '200': {description: Audit result}
+  /api/audits/{id}:
+    get:
+      operationId: getAudit
+      summary: Retrieve a saved audit
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+        - in: query
+          name: responseMode
+          schema: {type: string, enum: [compact, full], default: compact}
+      responses:
+        '200': {description: Saved audit}
+  /api/audits/compare:
+    post:
+      operationId: compareAudits
+      summary: Compare two saved audits
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [beforeAuditId, afterAuditId]
+              properties:
+                beforeAuditId: {type: string}
+                afterAuditId: {type: string}
+      responses:
+        '200': {description: Resolved, introduced and persistent findings}
+  /api/audits/{id}/export:
+    post:
+      operationId: requestAuditExport
+      summary: Generate an audit export
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [format]
+              properties:
+                format: {type: string, enum: [json, csv, xlsx, docx, pdf]}
+      responses:
+        '200': {description: Export metadata and download path}
 components:
   securitySchemes:
-    bearerAuth: {type: http, scheme: bearer}
-security:
-  - bearerAuth: []
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    SiteAuditRequest:
+      type: object
+      required: [url]
+      properties:
+        url: {type: string, format: uri}
+        mode: {type: string, enum: [fast, full], default: full}
+        maxPages: {type: integer, minimum: 1, maximum: 150, default: 50}
+        maxLinks: {type: integer, minimum: 1, maximum: 750, default: 750}
+        respectRobots: {type: boolean, default: true}
+        screenshotMode: {type: string, enum: [off, findings, all], default: findings}
+        performancePages: {type: integer, minimum: 0, maximum: 10, default: 1}
+        visualSamplePages: {type: integer, minimum: 0, maximum: 20, default: 5}
+        includeExternalLinkChecks: {type: boolean, default: true}
+        persist: {type: boolean, default: true}
+        clientId: {type: string}
+        projectId: {type: string}

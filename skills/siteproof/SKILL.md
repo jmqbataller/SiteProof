@@ -1,55 +1,102 @@
 ---
 name: siteproof
-description: Full-force evidence-based website auditing for public websites across WordPress, Shopify, Webflow, Wix, Squarespace, Next.js, React, custom sites and other stacks.
+description: Run evidence-based website audits, site inventories, QA reviews, remediation prioritization, regression comparisons, and audit report workflows for public websites across WordPress, Shopify, Webflow, Wix, Squarespace, Next.js, React, and custom stacks.
 ---
-# SiteProof Website Audit Skill
+# SiteProof full-force website audit
 
-Use this skill whenever the user asks to audit, inspect, QA, inventory, review, diagnose, compare, or verify a website.
+Use this skill when the user asks to audit, inspect, QA, inventory, diagnose, review, compare, recheck, or report on a website.
 
-## Operating principle
-Evidence first. Never state that something is broken, missing, duplicated, misconfigured, insecure, or non-compliant unless observed evidence supports it. Label uncertain items **Needs Manual Verification**.
+## Core rule
 
-## Default audit lanes
-1. Site discovery and URL inventory
-2. HTTP/redirect/indexability
-3. SEO metadata and canonicals
-4. Heading structure and content signals
-5. Internal/external links
-6. Images and alt text
-7. CTAs, phone/email/booking links
-8. Forms and lead capture
-9. Analytics/tracking tags
-10. Technology/CMS detection
-11. Accessibility signals
-12. Performance risks
-13. Security/header observations
-14. UX/navigation consistency
-15. Governance/legacy/duplicate pages
+**Evidence before conclusion.** Never call something broken, missing, insecure, misconfigured, duplicated, inaccessible, or non-compliant unless the available evidence establishes that claim. Use **Needs Manual Verification** when public observation cannot establish the private/admin fact.
 
-## Finding IDs
-SEO, TECH, CTA, FORM, TRACK, A11Y, PERF, SEC, UX, GOV. Use `CATEGORY-001` style identifiers. Keep identifiers stable within an audit.
+## Choose the workflow
 
-## Severity
-- Critical: immediate material outage, data/security or business-critical failure with verified evidence.
-- High: major conversion, crawlability, accessibility, security, or functional defect.
-- Medium: meaningful issue that should be scheduled.
-- Low: optimization or localized quality issue.
-- Informational: observation, inventory item, or verified pass.
+- Broad audit or “full force”: call `audit_site` with `options.mode=full` unless the user explicitly wants a fast scan.
+- Quick triage: call `audit_site` with `options.mode=fast`.
+- One URL or verification of a specific issue: call `audit_page`.
+- URL discovery only: call `discover_site`.
+- Re-open a prior result: call `get_audit`.
+- Before/after or regression review: call `compare_audits`.
+- Client deliverable: call `export_audit` after reviewing the audit result.
 
-## Evidence standard
-Each finding must include URL, visible/technical evidence, impact, recommendation, and verification status. Quote exact titles/headings/targets where helpful. Avoid pretending to have admin access.
+If the SiteProof MCP tools are unavailable, perform only the checks supported by available tools and state the reduced coverage. Never simulate tool output.
 
-## Public vs admin audit
-Public evidence cannot prove CMS health, plugin versions, analytics workspace ownership, CRM delivery, server logs, DNS ownership, form-email delivery, or private integrations. Mark these manual/admin checks unless corresponding tools or credentials are available.
+## Full-force sequence
 
-## Workflow
-1. Normalize target and scope.
-2. Use the SiteProof MCP tool `audit_site` for broad public crawl; use `audit_page` for targeted verification.
-3. Group findings by category and severity.
-4. Deduplicate repeated sitewide issues while retaining affected URL counts/examples.
-5. Separate verified defects from observations/manual verification.
-6. Produce: executive summary, coverage, findings register, priority remediation plan, and optional page inventory.
-7. For client deliverables, use calm professional language; never exaggerate risk.
+1. Normalize the target and respect scope/authorization.
+2. Discover robots.txt, XML sitemaps, and crawlable internal URLs.
+3. Run the full rendered audit. Prefer a reasonable page cap over an unbounded crawl.
+4. Review coverage: pages audited, links checked, browser availability, performance samples, and any crawl failures.
+5. Review Critical/High findings first, then Medium, then Low/Informational.
+6. Separate **Verified**, **Likely**, and **Needs Manual Verification** findings.
+7. Deduplicate template/sitewide issues while preserving affected URL counts/examples.
+8. Identify admin-only questions that require credentials or owner confirmation.
+9. Produce an executive summary and prioritized remediation plan.
+10. Export XLSX for the working inventory and DOCX/PDF for client-facing reporting when requested.
+
+## Audit lanes
+
+Cover these lanes unless scope says otherwise:
+
+- Discovery, robots, sitemaps, URL inventory
+- HTTP status, HTTPS, redirects, canonicals, indexability
+- Titles, descriptions, headings, content/template anomalies
+- Internal and external links
+- Images and alt attributes
+- Structured data and social metadata
+- CTAs, phone, email, booking, chat, downloads, purchase actions
+- Forms and observable lead-capture structure
+- Analytics/tracking tags and public identifiers
+- Technology/CMS/framework fingerprints
+- Accessibility automated signals
+- Browser-rendered UX signals, popups, cookie/consent UI
+- Performance/Lighthouse and CrUX when available
+- Security headers and mixed content
+- Duplicate metadata and governance/legacy indicators
+- Optional authenticated CMS observations when the user supplies authorized credentials
+
+## Finding IDs and severity
+
+Use `CATEGORY-001` numbering. Categories: `SEO`, `TECH`, `CTA`, `FORM`, `TRACK`, `A11Y`, `PERF`, `SEC`, `UX`, `GOV`, `CONTENT`.
+
+- **Critical** — verified material outage, severe exposure, or business-critical failure requiring immediate attention.
+- **High** — major crawlability, conversion, accessibility, performance, security, or functional defect.
+- **Medium** — meaningful issue that should enter the remediation backlog.
+- **Low** — localized optimization/hardening/quality issue.
+- **Informational** — inventory, confirmed configuration, pass, or context.
+
+Read `references/finding-rules.md` for classification details.
+
+## Public vs admin boundary
+
+Public evidence can identify scripts, markup, HTTP behavior, visible forms, tracking IDs, platform fingerprints, and rendered UI. It cannot by itself prove ownership, backend delivery, trigger configuration, CMS health, plugin update status, CRM routing, email receipt, DNS ownership, server logs, or private analytics settings.
+
+For WordPress, Shopify, Webflow, Wix, Squarespace, and custom apps, use `references/platform-playbooks.md` before making platform-specific statements.
+
+## Required output
+
+For a standard audit response, provide:
+
+1. **Scope & coverage** — target, mode, pages/links checked, relevant limitations.
+2. **Overall assessment** — score is a prioritization aid, not a certification.
+3. **Priority findings** — ID, severity, status, page/evidence, impact, recommendation.
+4. **Manual/admin verification queue** — items the public scan cannot prove.
+5. **Remediation order** — Now / Next / Later or equivalent.
+
+For client-facing work, use the reporting rules in `references/reporting-standard.md`.
 
 ## Quality gates
-Before finalizing: verify counts; ensure no unsupported claim; distinguish redirects from broken URLs; distinguish empty decorative alt from missing informative alt; do not infer tracking ownership from container IDs alone; do not claim a form submits successfully without testing the submission path or backend evidence.
+
+Before finalizing:
+
+- Verify counts against tool output.
+- Never turn an Informational observation into a defect without evidence.
+- A redirect is not automatically a broken link.
+- Multiple tracking IDs are observations until intent/ownership is known.
+- Missing security headers are hardening findings, not proof of compromise.
+- Automated accessibility checks do not establish WCAG conformance.
+- A form existing in the DOM does not prove successful submission, delivery, CRM routing, or autoresponders.
+- Decorative `alt=""` is not the same as a missing alt attribute.
+- Lighthouse is a lab measurement; CrUX is field data when available.
+- Never perform destructive, exploitative, credential-guessing, or bypass testing.
