@@ -1,0 +1,42 @@
+name: Daily activity commits
+
+on:
+  schedule:
+    # 12:05 AM Asia/Manila (UTC+8)
+    - cron: "5 16 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-activity-commits
+  cancel-in-progress: false
+
+jobs:
+  create-daily-commits:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure Git author
+        run: |
+          git config user.name "John Mark"
+          git config user.email "88698057+jmqbataller@users.noreply.github.com"
+
+      - name: Create 100 empty commits
+        env:
+          TZ: Asia/Manila
+        run: |
+          TODAY="$(date +%F)"
+          for i in $(seq -w 1 100); do
+            git commit --allow-empty -m "chore: daily activity ${TODAY} ${i}/100"
+          done
+          git push origin HEAD:main
