@@ -2,8 +2,14 @@ name: Daily activity commits
 
 on:
   schedule:
-    # 12:05 AM Asia/Manila (UTC+8)
-    - cron: "5 16 * * *"
+    # Redundant midnight checks in Asia/Manila (UTC+8).
+    # GitHub scheduled workflows can be delayed, so multiple windows are used.
+    - cron: "17 16 * * *" # 12:17 AM PH
+    - cron: "47 16 * * *" # 12:47 AM PH
+    - cron: "17 17 * * *" # 1:17 AM PH fallback
+  push:
+    paths:
+      - ".github/workflows/daily-activity-commits.yml"
   workflow_dispatch:
 
 permissions:
@@ -31,12 +37,31 @@ jobs:
           git config user.name "John Mark"
           git config user.email "88698057+jmqbataller@users.noreply.github.com"
 
-      - name: Create 100 empty commits
+      - name: Ensure 100 activity commits for Philippine date
         env:
           TZ: Asia/Manila
         run: |
+          set -euo pipefail
           TODAY="$(date +%F)"
-          for i in $(seq -w 1 100); do
-            git commit --allow-empty -m "chore: daily activity ${TODAY} ${i}/100"
+          PREFIX="chore: daily activity ${TODAY} "
+
+          EXISTING="$(git log main --format='%s' | grep -F "${PREFIX}" | wc -l | tr -d ' ')"
+          EXISTING="${EXISTING:-0}"
+
+          echo "Philippine date: ${TODAY}"
+          echo "Existing daily commits: ${EXISTING}/100"
+
+          if [ "${EXISTING}" -ge 100 ]; then
+            echo "Daily target already complete. Nothing to do."
+            exit 0
+          fi
+
+          START=$((EXISTING + 1))
+          for i in $(seq "${START}" 100); do
+            PADDED="$(printf '%03d' "${i}")"
+            STAMP="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+            GIT_AUTHOR_DATE="${STAMP}" GIT_COMMITTER_DATE="${STAMP}" \
+              git commit --allow-empty -m "${PREFIX}${PADDED}/100"
           done
+
           git push origin HEAD:main
