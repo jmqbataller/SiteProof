@@ -1,0 +1,33 @@
+name: One-time activity commits
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/one-time-activity-boost.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  create-activity-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create remaining activity commits
+        shell: bash
+        run: |
+          git config user.name "John Mark"
+          git config user.email "88698057+jmqbataller@users.noreply.github.com"
+          git checkout main
+          for i in $(seq -w 8 99); do
+            git commit --allow-empty -m "chore: +100 activity commit ${i}/100"
+          done
+          git rm .github/workflows/one-time-activity-boost.yml
+          git commit -m "chore: +100 activity commit 100/100"
+          git push origin main
