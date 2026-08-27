@@ -45,8 +45,7 @@ jobs:
           TODAY="$(date +%F)"
           PREFIX="chore: daily activity ${TODAY} "
 
-          EXISTING="$(git log main --format='%s' | grep -F "${PREFIX}" | wc -l | tr -d ' ')"
-          EXISTING="${EXISTING:-0}"
+          EXISTING="$(git log main --format='%s' | awk -v prefix="${PREFIX}" 'index($0, prefix) == 1 { count++ } END { print count + 0 }')"
 
           echo "Philippine date: ${TODAY}"
           echo "Existing daily commits: ${EXISTING}/100"
