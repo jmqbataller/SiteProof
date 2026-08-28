@@ -12,6 +12,7 @@ Use this skill when the user asks to audit, inspect, QA, inventory, diagnose, re
 
 ## Choose the workflow
 
+- Five-point connection check or `/siteproof-quickcheck`: read `references/quickcheck.md`, call `quickcheck_site`, and return both the specialist summary and interactive artifact when file creation is available.
 - Broad audit or “full force”: call `audit_site` with `options.mode=full` unless the user explicitly wants a fast scan.
 - Quick triage: call `audit_site` with `options.mode=fast`.
 - One URL or verification of a specific issue: call `audit_page`.
@@ -21,6 +22,20 @@ Use this skill when the user asks to audit, inspect, QA, inventory, diagnose, re
 - Client deliverable: call `export_audit` after reviewing the audit result.
 
 If the SiteProof MCP tools are unavailable, perform only the checks supported by available tools and state the reduced coverage. Never simulate tool output.
+
+## Slash command aliases
+
+Interpret these leading aliases as explicit workflow selection. They are SiteProof prompt commands, not a claim that the host platform provides native slash-command registration.
+
+- `/siteproof-quickcheck <url>` — five checks: DNS, website, subdomains, email DNS, and SSL/security; creates the 2-in-1 chat summary and HTML artifact.
+- `/siteproof-fast <url>` — fast multi-page HTTP/source audit.
+- `/siteproof-full <url>` — full rendered crawl and audit.
+- `/siteproof-page <url>` — targeted single-page audit.
+- `/siteproof-discover <url>` — robots, sitemap, and URL discovery only.
+- `/siteproof-compare <before-audit-id> <after-audit-id>` — regression comparison.
+- `/siteproof-export <audit-id> <json|csv|xlsx|docx|pdf>` — generate a saved-audit export.
+
+If the command arguments are incomplete, ask only for the missing required value. A bare domain may be normalized to HTTPS before calling a tool that requires a full URL.
 
 ## Full-force sequence
 

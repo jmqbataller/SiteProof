@@ -40,6 +40,19 @@ paths:
                 mode: {type: string, enum: [fast, full], default: full}
       responses:
         '200': {description: Detailed page audit}
+  /api/quickcheck:
+    post:
+      operationId: quickCheckSite
+      summary: Run the five-point SiteProof QuickCheck
+      description: Checks public DNS, website functionality, known subdomains, email DNS, and SSL/HTTPS. Private account and delivery facts are returned as access-dependent.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuickCheckRequest'
+      responses:
+        '200': {description: Five-area QuickCheck result and artifact-ready data}
   /api/audit/site/start:
     post:
       operationId: startSiteAudit
@@ -135,6 +148,21 @@ components:
       type: http
       scheme: bearer
   schemas:
+    QuickCheckRequest:
+      type: object
+      required: [url]
+      properties:
+        url: {type: string, format: uri}
+        subdomains:
+          type: array
+          maxItems: 20
+          items: {type: string}
+          description: Optional known in-domain hosts or labels to verify.
+        dkimSelectors:
+          type: array
+          maxItems: 10
+          items: {type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._-]{0,62}$'}
+          description: Optional evidenced selectors; SiteProof does not guess selectors to claim DKIM absence.
     SiteAuditRequest:
       type: object
       required: [url]

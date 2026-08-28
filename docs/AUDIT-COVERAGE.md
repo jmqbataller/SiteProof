@@ -1,6 +1,11 @@
 # SiteProof v0.2 audit coverage
 
 ## Automated public-web coverage
+- QuickCheck public DNS resolution and nameserver inventory
+- QuickCheck MX, SPF, DMARC and evidenced DKIM selector lookup
+- QuickCheck known/linked/standard subdomain resolution
+- direct TLS certificate trust, hostname and validity inspection
+- HTTP-to-HTTPS routing verification
 - robots.txt and XML sitemap discovery
 - crawl inventory and page caps
 - HTTP status and redirect chains
@@ -27,6 +32,8 @@
 v0.2 includes a WordPress Application Password adapter for REST-accessible plugin/theme/settings observations when the supplied account has permission.
 
 ## Manual or specialized verification still required
+- registrar ownership, transfer lock, renewal and authoritative private DNS-zone completeness
+- mailbox login, sending and receiving even when public email DNS records pass
 - form submission delivery and CRM/SMS/email routing
 - GTM/GA/Meta account ownership, triggers, publish state and data accuracy
 - Search Console/private analytics data

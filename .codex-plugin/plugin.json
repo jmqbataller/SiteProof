@@ -21,6 +21,7 @@
     "capabilities": ["Read", "Write"],
     "websiteURL": "https://github.com/jmqbataller/SiteProof",
     "defaultPrompt": [
+      "Run /siteproof-quickcheck for this website and generate the five-point interactive report.",
       "Run a full-force audit of this website and prioritize verified issues.",
       "Audit this site for SEO, forms, CTAs, tracking, accessibility, performance and security.",
       "Compare these two SiteProof audits and show what was fixed and what regressed."

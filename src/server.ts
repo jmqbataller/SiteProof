@@ -14,6 +14,7 @@ import { ensurePlaywrightReady } from './browser.js';
 import type { AuditOptions } from './types.js';
 import { newId } from './utils.js';
 import { createSiteProofMcp, compact } from './mcp.js';
+import { quickCheckSite } from './quickcheck.js';
 
 const app=express(); app.disable('x-powered-by');
 const auth=(req:any,res:any,next:any)=>{if(!config.apiKey)return next();const h=req.headers.authorization||'';if(h!==`Bearer ${config.apiKey}`)return res.status(401).json({error:'Unauthorized'});next();};
@@ -26,6 +27,7 @@ app.use(express.json({limit:'2mb'}));
 app.get('/health',asyncRoute(async(_req:any,res:any)=>res.json({ok:true,name:'SiteProof',version:'0.2.0',browser:await ensurePlaywrightReady(),persistence:config.supabaseUrl?'supabase+local':'local'})));
 app.post('/api/discover',auth,asyncRoute(async(req:any,res:any)=>res.json(await discoverSite(req.body.url,Math.min(Number(req.body.maxUrls||500),2000)))));
 app.post('/api/audit/page',auth,asyncRoute(async(req:any,res:any)=>res.json(await auditPage(req.body.url,{mode:req.body.mode==='full'?'full':'fast'}))));
+app.post('/api/quickcheck',auth,asyncRoute(async(req:any,res:any)=>res.json(await quickCheckSite(req.body.url,{subdomains:Array.isArray(req.body.subdomains)?req.body.subdomains:[],dkimSelectors:Array.isArray(req.body.dkimSelectors)?req.body.dkimSelectors:[]}))));
 app.post('/api/audit/site',auth,asyncRoute(async(req:any,res:any)=>{const audit=await auditSite(req.body.url,req.body as AuditOptions);res.json(req.body.responseMode==='full'?audit:compact(audit));}));
 app.get('/api/audits',auth,asyncRoute(async(req:any,res:any)=>res.json(await listAudits(Math.min(Number(req.query.limit||50),200)))));
 app.get('/api/audits/:id',auth,asyncRoute(async(req:any,res:any)=>{const a=await getAudit(req.params.id);res.json(req.query.responseMode==='full'?a:compact(a));}));

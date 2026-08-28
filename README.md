@@ -5,6 +5,7 @@
 SiteProof audits public websites across WordPress, Shopify, Webflow, Wix, Squarespace, React/Next.js and custom stacks. It separates verified observations from facts that require admin/manual evidence.
 
 ## v0.2 highlights
+- **QuickCheck mode:** one URL, five public connection checks, plus a concise summary and interactive HTML artifact.
 - **Fast mode:** HTTP + source HTML for quick audits.
 - **Full Force mode:** Playwright Chromium rendering, axe-core, screenshots, Lighthouse sampling and optional CrUX.
 - robots.txt + recursive XML sitemap discovery.
@@ -52,6 +53,14 @@ Health check:
 curl http://localhost:8787/health
 ```
 
+Five-point QuickCheck:
+```bash
+curl -X POST http://localhost:8787/api/quickcheck \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer change-me' \
+  -d '{"url":"https://example.com","subdomains":["www","mail"]}'
+```
+
 Fast audit:
 ```bash
 curl -X POST http://localhost:8787/api/audit/site \
@@ -71,6 +80,7 @@ curl -X POST http://localhost:8787/api/audit/site/start \
 Poll the returned `/api/jobs/<jobId>` endpoint until complete.
 
 ## MCP tools
+- `quickcheck_site`
 - `discover_site`
 - `audit_page`
 - `audit_site`
@@ -79,6 +89,20 @@ Poll the returned `/api/jobs/<jobId>` endpoint until complete.
 - `export_audit`
 
 HTTP MCP endpoint: `POST/GET /mcp` through Streamable HTTP transport. Local development can run `npm run mcp:stdio`.
+
+## SiteProof prompt commands
+
+| Command | Workflow |
+| --- | --- |
+| `/siteproof-quickcheck <url>` | DNS, website, subdomains, email DNS, and SSL/security with an interactive report artifact. |
+| `/siteproof-fast <url>` | Fast HTTP/source audit. |
+| `/siteproof-full <url>` | Full rendered crawl and audit. |
+| `/siteproof-page <url>` | Targeted single-page audit. |
+| `/siteproof-discover <url>` | Robots, sitemap, and URL discovery. |
+| `/siteproof-compare <before-id> <after-id>` | Before/after regression review. |
+| `/siteproof-export <audit-id> <format>` | JSON, CSV, XLSX, DOCX, or PDF export. |
+
+These are prompt aliases interpreted by the bundled Skill/GPT instructions; they do not depend on native slash-command registration by the host client.
 
 ## ChatGPT / ChatGPT Work
 See **[docs/INSTALL-CHATGPT.md](docs/INSTALL-CHATGPT.md)**. The plugin manifest and skill are included. For a remote ChatGPT MCP connection, deploy the server first and register `/mcp`; ChatGPT then generates the technical app ID used to create `.app.json`.

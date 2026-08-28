@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>SiteProof QuickCheck</title>
+  <style>
+    :root {
+      --ink: #10201e;
+      --muted: #64716f;
+      --line: #dce5e2;
+      --paper: #ffffff;
+      --wash: #f2f7f5;
+      --brand: #0f766e;
+      --brand-dark: #0b4f4a;
+      --pass: #18794e;
+      --attention: #9a6700;
+      --failed: #c9362b;
+      --access: #6750a4;
+      --na: #667085;
+      --shadow: 0 18px 55px rgba(16, 32, 30, .09);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--wash); }
+    a { color: var(--brand); }
+    button, select { font: inherit; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 32px auto 56px; }
+    .hero {
+      overflow: hidden;
+      position: relative;
+      padding: 34px;
+      border-radius: 24px;
+      color: #fff;
+      background: linear-gradient(135deg, #0b3835 0%, #0f766e 62%, #38a99d 100%);
+      box-shadow: var(--shadow);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      right: -100px;
+      top: -140px;
+      background: rgba(255,255,255,.09);
+    }
+    .eyebrow { margin: 0 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; opacity: .78; }
+    h1 { margin: 0; max-width: 760px; font-size: clamp(30px, 5vw, 52px); line-height: 1.04; letter-spacing: -.04em; }
+    .hero-summary { max-width: 760px; margin: 16px 0 0; color: rgba(255,255,255,.83); font-size: 16px; line-height: 1.65; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 24px; font-size: 13px; color: rgba(255,255,255,.75); }
+    .hero-meta strong { color: #fff; }
+    .hero-top { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
+    .score {
+      flex: 0 0 124px;
+      width: 124px;
+      height: 124px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: conic-gradient(#d8fff8 calc(var(--score) * 1%), rgba(255,255,255,.18) 0);
+      position: relative;
+    }
+    .score::before { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: #0f655e; }
+    .score-copy { position: relative; text-align: center; }
+    .score strong { display: block; font-size: 30px; line-height: 1; }
+    .score small { display: block; margin-top: 5px; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 24px 0; }
+    .toolbar-group { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .toolbar label { color: var(--muted); font-size: 13px; font-weight: 700; }
+    select, .button { min-height: 40px; border: 1px solid var(--line); border-radius: 11px; background: var(--paper); color: var(--ink); padding: 0 13px; }
+    .button { cursor: pointer; font-weight: 750; }
+    .button.primary { border-color: var(--brand); color: #fff; background: var(--brand); }
+    .grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+    .area-card, .panel { border: 1px solid var(--line); background: var(--paper); box-shadow: 0 8px 30px rgba(16,32,30,.05); }
+    .area-card { padding: 18px; border-radius: 16px; }
+    .area-no { color: var(--muted); font-size: 11px; font-weight: 850; letter-spacing: .12em; }
+    .area-card h2 { margin: 7px 0 13px; font-size: 15px; line-height: 1.25; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 27px;
+      border-radius: 999px;
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+    .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .status.pass { color: var(--pass); background: #e9f8f0; }
+    .status.needs-attention { color: var(--attention); background: #fff5d8; }
+    .status.failed { color: var(--failed); background: #ffebe9; }
+    .status.needs-access { color: var(--access); background: #f0ebff; }
+    .status.not-applicable { color: var(--na); background: #f1f3f5; }
+    .panel { margin-top: 18px; border-radius: 18px; overflow: hidden; }
+    .panel-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; padding: 22px 24px; border-bottom: 1px solid var(--line); }
+    .panel-head h2 { margin: 0; font-size: 20px; letter-spacing: -.02em; }
+    .panel-head p { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .check-list { display: grid; }
+    .check { display: grid; grid-template-columns: minmax(175px, .8fr) minmax(250px, 1.6fr) minmax(220px, 1.2fr); gap: 20px; padding: 20px 24px; border-top: 1px solid var(--line); }
+    .check:first-child { border-top: 0; }
+    .check h3 { margin: 0 0 9px; font-size: 14px; }
+    .check p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .field-label { display: block; margin-bottom: 5px; color: var(--ink); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+    .owner { margin-top: 11px !important; }
+    .severity { display: inline-block; margin-left: 7px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 15px 18px; border-top: 1px solid var(--line); text-align: left; font-size: 13px; vertical-align: top; }
+    th { border-top: 0; color: var(--muted); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; background: #fbfcfc; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .list { margin: 0; padding: 0 24px 22px 42px; color: var(--muted); font-size: 13px; line-height: 1.65; }
+    .empty { padding: 26px 24px; color: var(--muted); font-size: 13px; }
+    .footer { padding: 22px 3px 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .hidden { display: none !important; }
+    .template-error { padding: 24px; border: 1px solid #f0c36d; border-radius: 14px; background: #fff8e7; }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .check { grid-template-columns: 1fr; gap: 12px; }
+      .split { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .shell { width: min(100% - 20px, 1180px); margin-top: 10px; }
+      .hero { padding: 25px 22px; border-radius: 18px; }
+      .hero-top { display: block; }
+      .score { margin-top: 24px; width: 98px; height: 98px; }
+      .score strong { font-size: 24px; }
+      .grid { grid-template-columns: 1fr; }
+      .panel-head { padding: 18px; }
+      .check { padding: 18px; }
+    }
+    @media print {
+      body { background: #fff; }
+      .shell { width: 100%; margin: 0; }
+      .hero, .area-card, .panel { box-shadow: none; }
+      .toolbar { display: none; }
+      .panel { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <script id="audit-data" type="application/json">__AUDIT_DATA__</script>
+  <main class="shell" id="app"></main>
+  <script>
+    const esc = (value) => String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+    const slug = (value) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const formatDate = (value) => {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? String(value ?? "Not recorded") : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    };
+    const status = (value) => `<span class="status ${slug(value)}">${esc(value)}</span>`;
+    const list = (items) => (items?.length ? `<ul class="list">${items.map(item => `<li>${esc(item)}</li>`).join("")}</ul>` : `<div class="empty">None recorded.</div>`);
+    let audit;
+    try {
+      audit = JSON.parse(document.getElementById("audit-data").textContent);
+    } catch (error) {
+      document.getElementById("app").innerHTML = `<div class="template-error"><strong>Report data is not configured.</strong><p>Replace the audit data placeholder with valid JSON before delivering this artifact.</p></div>`;
+      throw error;
+    }
+    const checks = (audit.areas || []).flatMap(area => (area.checks || []).map(check => ({ ...check, area: area.name })));
+    const score = Math.max(0, Math.min(100, Number(audit.score) || 0));
+    const renderChecks = (area) => {
+      if (!area.checks?.length) return `<div class="empty">No individual checks recorded.</div>`;
+      return `<div class="check-list">${area.checks.map(check => `
+        <article class="check" data-status="${esc(check.status)}">
+          <div>
+            <h3>${esc(check.name)}</h3>
+            ${status(check.status)}<span class="severity">${esc(check.severity)}</span>
+          </div>
+          <p><span class="field-label">Evidence</span>${esc(check.evidence)}</p>
+          <div>
+            <p><span class="field-label">Action</span>${esc(check.action)}</p>
+            <p class="owner"><span class="field-label">Owner</span>${esc(check.owner)}</p>
+          </div>
+        </article>`).join("")}</div>`;
+    };
+    const actionRows = (audit.actions || []).map(action => `<tr><td><strong>${esc(action.priority)}</strong></td><td>${esc(action.task)}</td><td>${esc(action.owner)}</td></tr>`).join("");
+    document.title = `${audit.site || "Website"} — 5-Point Audit`;
+    document.getElementById("app").innerHTML = `
+      <section class="hero">
+        <div class="hero-top">
+          <div>
+            <p class="eyebrow">SiteProof · 5-Point QuickCheck</p>
+            <h1>${esc(audit.site)}</h1>
+            <p class="hero-summary">${esc(audit.summary)}</p>
+            <div class="hero-meta">
+              <span>Overall: <strong>${esc(audit.overall)}</strong></span>
+              <span>Checked: <strong>${esc(formatDate(audit.checkedAt))}</strong></span>
+              <span>Excluded checks: <strong>${esc(audit.excluded ?? 0)}</strong></span>
+              <span><a href="${esc(audit.url)}" style="color:#fff" rel="noreferrer">Open website</a></span>
+            </div>
+          </div>
+          <div class="score" style="--score:${score}" aria-label="Verified checks score ${score} percent">
+            <div class="score-copy"><strong>${score}%</strong><small>Verified checks</small></div>
+          </div>
+        </div>
+      </section>
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <label for="filter">Show checks</label>
+          <select id="filter">
+            <option value="All">All statuses</option>
+            <option>Pass</option>
+            <option>Needs Attention</option>
+            <option>Failed</option>
+            <option>Needs Access</option>
+            <option>Not Applicable</option>
+          </select>
+          <span style="color:var(--muted);font-size:12px"><strong id="visible-count">${checks.length}</strong> of ${checks.length} checks</span>
+        </div>
+        <button class="button primary" id="print">Print / Save PDF</button>
+      </div>
+      <section class="grid" aria-label="Audit area overview">
+        ${(audit.areas || []).map(area => `<article class="area-card"><span class="area-no">AREA ${esc(area.number)}</span><h2>${esc(area.name)}</h2>${status(area.status)}</article>`).join("")}
+      </section>
+      ${(audit.areas || []).map(area => `
+        <section class="panel audit-area">
+          <header class="panel-head"><div><h2>${esc(area.number)}. ${esc(area.name)}</h2><p>${esc(area.summary)}</p></div>${status(area.status)}</header>
+          ${renderChecks(area)}
+        </section>`).join("")}
+      <section class="panel">
+        <header class="panel-head"><div><h2>Prioritized action plan</h2><p>Confirmed fixes and follow-up verification, ordered by business impact.</p></div></header>
+        ${actionRows ? `<div class="table-wrap"><table><thead><tr><th>Priority</th><th>Task</th><th>Owner</th></tr></thead><tbody>${actionRows}</tbody></table></div>` : `<div class="empty">No corrective actions recorded.</div>`}
+      </section>
+      <div class="split">
+        <section class="panel"><header class="panel-head"><div><h2>Needs access or authorization</h2><p>Items that cannot be proven from a public URL alone.</p></div></header>${list(audit.limitations)}</section>
+        <section class="panel"><header class="panel-head"><div><h2>Evidence sources</h2><p>Methods used for this point-in-time review.</p></div></header>${list(audit.sources)}</section>
+      </div>
+      <footer class="footer">This report is a point-in-time, read-only review. Public availability does not prove registrar ownership, mailbox operation, authenticated admin access, or end-to-end form delivery unless explicitly tested and recorded.</footer>`;
+    document.getElementById("filter").addEventListener("change", (event) => {
+      const selected = event.target.value;
+      let visible = 0;
+      document.querySelectorAll(".check").forEach(row => {
+        const show = selected === "All" || row.dataset.status === selected;
+        row.classList.toggle("hidden", !show);
+        if (show) visible += 1;
+      });
+      document.querySelectorAll(".audit-area").forEach(area => {
+        const rows = [...area.querySelectorAll(".check")];
+        area.classList.toggle("hidden", rows.length > 0 && rows.every(row => row.classList.contains("hidden")));
+      });
+      document.getElementById("visible-count").textContent = visible;
+    });
+    document.getElementById("print").addEventListener("click", () => window.print());
+  </script>
+</body>
+</html>

@@ -1,6 +1,9 @@
 # Changelog
 
 ## 0.2.0
+- Added `/siteproof-quickcheck` with public DNS, website, known-subdomain, email-DNS, and TLS/HTTPS checks from one URL.
+- Added SiteProof prompt commands for QuickCheck, fast/full audit, page audit, discovery, comparison, and export workflows.
+- Added an interactive, self-contained QuickCheck HTML artifact template.
 - Added Fast and Full Force audit modes.
 - Added SSRF-safe URL validation and redirect revalidation.
 - Added robots.txt and recursive XML sitemap discovery.
