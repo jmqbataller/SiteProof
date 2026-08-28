@@ -115,27 +115,29 @@ async function inspectTls(host:string,port:number):Promise<TlsObservation>{
     let settled=false;
     let socket:tls.TLSSocket|undefined;
     const finish=(value:TlsObservation)=>{if(settled)return;settled=true;socket?.destroy();resolve(value);};
-    socket=tls.connect({host,port,servername:host,rejectUnauthorized:false},()=>{
-      const certificate=socket.getPeerCertificate(true);
+    const activeSocket=tls.connect({host,port,servername:host,rejectUnauthorized:false});
+    socket=activeSocket;
+    activeSocket.once('secureConnect',()=>{
+      const certificate=activeSocket.getPeerCertificate(true);
       const validTo=certificate?.valid_to;
       const daysRemaining=validTo?Math.floor((new Date(validTo).getTime()-Date.now())/86_400_000):undefined;
       const identityError=certificate&&Object.keys(certificate).length?tls.checkServerIdentity(host,certificate):new Error('No peer certificate returned.');
       finish({
         connected:true,
-        authorized:socket.authorized,
-        authorizationError:socket.authorizationError?String(socket.authorizationError):undefined,
+        authorized:activeSocket.authorized,
+        authorizationError:activeSocket.authorizationError?String(activeSocket.authorizationError):undefined,
         hostnameValid:!identityError,
         validFrom:certificate?.valid_from,
         validTo,
         daysRemaining,
-        subject:certificate?.subject?.CN,
-        issuer:certificate?.issuer?.CN,
+        subject:Array.isArray(certificate?.subject?.CN)?certificate.subject.CN.join(', '):certificate?.subject?.CN,
+        issuer:Array.isArray(certificate?.issuer?.CN)?certificate.issuer.CN.join(', '):certificate?.issuer?.CN,
         subjectAltName:certificate?.subjectaltname,
-        protocol:socket.getProtocol()||undefined
+        protocol:activeSocket.getProtocol()||undefined
       });
     });
-    socket.setTimeout(12_000,()=>finish({connected:false,authorized:false,hostnameValid:false,error:'TLS connection timed out.'}));
-    socket.on('error',error=>finish({connected:false,authorized:false,hostnameValid:false,error:message(error)}));
+    activeSocket.setTimeout(12_000,()=>finish({connected:false,authorized:false,hostnameValid:false,error:'TLS connection timed out.'}));
+    activeSocket.on('error',error=>finish({connected:false,authorized:false,hostnameValid:false,error:message(error)}));
   });
 }
 
