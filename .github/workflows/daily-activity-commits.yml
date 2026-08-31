@@ -22,7 +22,7 @@ concurrency:
 jobs:
   create-daily-commits:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout main
@@ -37,7 +37,7 @@ jobs:
           git config user.name "John Mark"
           git config user.email "88698057+jmqbataller@users.noreply.github.com"
 
-      - name: Ensure 100 activity commits for Philippine date
+      - name: Ensure random 100-300 activity commits for Philippine date
         env:
           TZ: Asia/Manila
         run: |
@@ -45,22 +45,28 @@ jobs:
           TODAY="$(date +%F)"
           PREFIX="chore: daily activity ${TODAY} "
 
+          # Deterministic pseudo-random target (100-300) for this PH date.
+          # Retries on the same date always resolve to the same target.
+          HASH="$(printf '%s' "${TODAY}:jmqbataller/SiteProof:daily-target-v1" | sha256sum | cut -c1-8)"
+          TARGET=$((16#${HASH} % 201 + 100))
+
           EXISTING="$(git log main --format='%s' | awk -v prefix="${PREFIX}" 'index($0, prefix) == 1 { count++ } END { print count + 0 }')"
 
           echo "Philippine date: ${TODAY}"
-          echo "Existing daily commits: ${EXISTING}/100"
+          echo "Random daily target: ${TARGET}"
+          echo "Existing daily commits: ${EXISTING}/${TARGET}"
 
-          if [ "${EXISTING}" -ge 100 ]; then
+          if [ "${EXISTING}" -ge "${TARGET}" ]; then
             echo "Daily target already complete. Nothing to do."
             exit 0
           fi
 
           START=$((EXISTING + 1))
-          for i in $(seq "${START}" 100); do
+          for i in $(seq "${START}" "${TARGET}"); do
             PADDED="$(printf '%03d' "${i}")"
             STAMP="$(date '+%Y-%m-%dT%H:%M:%S%z')"
             GIT_AUTHOR_DATE="${STAMP}" GIT_COMMITTER_DATE="${STAMP}" \
-              git commit --allow-empty -m "${PREFIX}${PADDED}/100"
+              git commit --allow-empty -m "${PREFIX}${PADDED}/${TARGET}"
           done
 
           git push origin HEAD:main
