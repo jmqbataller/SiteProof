@@ -2,14 +2,12 @@ name: Daily activity commits
 
 on:
   schedule:
-    # Redundant midnight checks in Asia/Manila (UTC+8).
-    # GitHub scheduled workflows can be delayed, so multiple windows are used.
-    - cron: "17 16 * * *" # 12:17 AM PH
-    - cron: "47 16 * * *" # 12:47 AM PH
-    - cron: "17 17 * * *" # 1:17 AM PH fallback
-  push:
-    paths:
-      - ".github/workflows/daily-activity-commits.yml"
+    # GitHub contribution dates are UTC. These run after 00:00 UTC,
+    # which is after 8:00 AM in the Philippines, so the graph date
+    # matches the Philippine calendar date.
+    - cron: "17 0 * * *" # 8:17 AM PH
+    - cron: "47 0 * * *" # 8:47 AM PH retry
+    - cron: "17 1 * * *" # 9:17 AM PH fallback
   workflow_dispatch:
 
 permissions:
@@ -37,24 +35,22 @@ jobs:
           git config user.name "John Mark"
           git config user.email "88698057+jmqbataller@users.noreply.github.com"
 
-      - name: Ensure random 100-300 activity commits for Philippine date
-        env:
-          TZ: Asia/Manila
+      - name: Ensure random 100-300 commits for GitHub contribution date
         run: |
           set -euo pipefail
-          TODAY="$(date +%F)"
-          PREFIX="chore: daily activity ${TODAY} "
+          TODAY="$(date -u +%F)"
+          PREFIX="chore: github contribution ${TODAY} "
 
-          # Deterministic pseudo-random target (100-300) for this PH date.
-          # Retries on the same date always resolve to the same target.
+          # Deterministic pseudo-random target (100-300) for this UTC date.
+          # All retry windows resolve to the same target.
           HASH="$(printf '%s' "${TODAY}:jmqbataller/SiteProof:daily-target-v1" | sha256sum | cut -c1-8)"
           TARGET=$((16#${HASH} % 201 + 100))
 
           EXISTING="$(git log main --format='%s' | awk -v prefix="${PREFIX}" 'index($0, prefix) == 1 { count++ } END { print count + 0 }')"
 
-          echo "Philippine date: ${TODAY}"
+          echo "GitHub contribution date (UTC): ${TODAY}"
           echo "Random daily target: ${TARGET}"
-          echo "Existing daily commits: ${EXISTING}/${TARGET}"
+          echo "Existing correctly-dated commits: ${EXISTING}/${TARGET}"
 
           if [ "${EXISTING}" -ge "${TARGET}" ]; then
             echo "Daily target already complete. Nothing to do."
@@ -64,7 +60,7 @@ jobs:
           START=$((EXISTING + 1))
           for i in $(seq "${START}" "${TARGET}"); do
             PADDED="$(printf '%03d' "${i}")"
-            STAMP="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+            STAMP="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
             GIT_AUTHOR_DATE="${STAMP}" GIT_COMMITTER_DATE="${STAMP}" \
               git commit --allow-empty -m "${PREFIX}${PADDED}/${TARGET}"
           done
