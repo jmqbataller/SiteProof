@@ -4,7 +4,7 @@
 
 SiteOps HQ is the management layer for websites you are responsible for. It combines continuous uptime/reliability monitoring, incident tracking, public security signals, an improvement backlog, and on-demand deep website health checks.
 
-**Production dashboard:** https://siteops-hq-mangtomass-projects.vercel.app
+**Production dashboard:** https://opsjm.vercel.app
 
 ## What SiteOps HQ manages
 
